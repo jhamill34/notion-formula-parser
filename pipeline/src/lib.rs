@@ -6,6 +6,7 @@ pub trait Error {
 }
 
 pub struct HandlerError<'a>(Box<dyn Error + 'a>);
+
 impl<'a> HandlerError<'a> {
     pub fn new(err: impl Error + 'a) -> Self {
         HandlerError(Box::new(err))
@@ -37,7 +38,7 @@ struct Stage<'a, I, K, O> {
     next: Box<dyn Handler<Input=K, Output=O> + 'a>
 }
 
-impl<'a, I, K, O> Handler for Stage<'a, I, K, O> {
+impl<I, K, O> Handler for Stage<'_, I, K, O> {
     type Input=I;
     type Output=O;
     fn handle(&self, input: I) -> HandlerResult<O> {
