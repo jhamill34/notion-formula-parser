@@ -3,11 +3,8 @@ use pipeline::*;
 const ALPHA_START: u8 = 65;
 
 struct StepOne;
-impl Handler for StepOne {
-    type Input = u8;
-    type Output = Vec<u8>;
-
-    fn handle(&self, input: Self::Input) -> HandlerResult<Self::Output> {
+impl Handler<u8, Vec<u8>> for StepOne {
+    fn handle(&self, input: u8) -> HandlerResult<Vec<u8>> {
         let mut output: Vec<u8> = Vec::new();
         let mut i: u8 = 0;
 
@@ -22,35 +19,29 @@ impl Handler for StepOne {
 }
 
 struct StepTwo;
-impl Handler for StepTwo {
-    type Input = Vec<u8>;
-    type Output = String;
-
-    fn handle(&self, input: Self::Input) -> HandlerResult<Self::Output> {
+impl Handler<Vec<u8>, String> for StepTwo {
+    fn handle(&self, input: Vec<u8>) -> HandlerResult<String> {
         match String::from_utf8(input) {
             Ok(value) => Ok(value),
-            Err(e) => panic!(e)
+            Err(e) => panic!(e),
         }
     }
 }
 
 enum TestErrors {
-   SimpleError
+    SimpleError,
 }
 impl Error for TestErrors {
     fn description(&self) -> String {
         match &self {
-           Self::SimpleError => String::from("I'm a simple error...")
+            Self::SimpleError => String::from("I'm a simple error..."),
         }
     }
 }
 
 struct StepThree;
-impl Handler for StepThree {
-    type Input = Vec<u8>;
-    type Output = Vec<u8>;
-
-    fn handle(&self, _input: Self::Input) -> HandlerResult<Self::Output> {
+impl Handler<Vec<u8>, Vec<u8>> for StepThree {
+    fn handle(&self, _input: Vec<u8>) -> HandlerResult<Vec<u8>> {
         Err(HandlerError::new(TestErrors::SimpleError))
     }
 }
@@ -74,9 +65,7 @@ fn step_two_works() {
 #[test]
 fn step_three_fails() {
     let step = StepThree;
-    let result = step.handle(vec![65, 66, 67])
-        .unwrap_err()
-        .description();
+    let result = step.handle(vec![65, 66, 67]).unwrap_err().description();
 
     assert_eq!("I'm a simple error...", result)
 }
@@ -92,9 +81,7 @@ fn test_simple_workflow_works() {
 
 #[test]
 fn test_workflow_errors_in_the_middle() {
-    let pipe: Pipeline<u8, String> = Pipeline::new(StepOne)
-        .add(StepThree)
-        .add(StepTwo);
+    let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepThree).add(StepTwo);
 
     let result = pipe.start(4).unwrap_err().description();
 
