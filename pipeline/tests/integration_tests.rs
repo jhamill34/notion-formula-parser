@@ -46,44 +46,49 @@ impl Handler<Vec<u8>, Vec<u8>> for StepThree {
     }
 }
 
-#[test]
-fn step_one_works() {
-    let step = StepOne;
-    let result = step.handle(3).unwrap();
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    assert_eq!(vec![65, 66, 67], result)
-}
+    #[test]
+    fn step_one_works() {
+        let step = StepOne;
+        let result = step.handle(3).unwrap();
 
-#[test]
-fn step_two_works() {
-    let step = StepTwo;
-    let result = step.handle(vec![65, 66, 67]).unwrap();
+        assert_eq!(vec![65, 66, 67], result)
+    }
 
-    assert_eq!("ABC", result);
-}
+    #[test]
+    fn step_two_works() {
+        let step = StepTwo;
+        let result = step.handle(vec![65, 66, 67]).unwrap();
 
-#[test]
-fn step_three_fails() {
-    let step = StepThree;
-    let result = step.handle(vec![65, 66, 67]).unwrap_err().description();
+        assert_eq!("ABC", result);
+    }
 
-    assert_eq!("I'm a simple error...", result)
-}
+    #[test]
+    fn step_three_fails() {
+        let step = StepThree;
+        let result = step.handle(vec![65, 66, 67]).unwrap_err().description();
 
-#[test]
-fn test_simple_workflow_works() {
-    let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepTwo);
+        assert_eq!("I'm a simple error...", result)
+    }
 
-    let result = pipe.start(4).unwrap();
+    #[test]
+    fn test_simple_workflow_works() {
+        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepTwo);
 
-    assert_eq!(String::from("ABCD"), result);
-}
+        let result = pipe.start(4).unwrap();
 
-#[test]
-fn test_workflow_errors_in_the_middle() {
-    let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepThree).add(StepTwo);
+        assert_eq!(String::from("ABCD"), result);
+    }
 
-    let result = pipe.start(4).unwrap_err().description();
+    #[test]
+    fn test_workflow_errors_in_the_middle() {
+        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepThree).add(StepTwo);
 
-    assert_eq!("I'm a simple error...", result);
+        let result = pipe.start(4).unwrap_err().description();
+
+        assert_eq!("I'm a simple error...", result);
+    }
 }
