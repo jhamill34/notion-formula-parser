@@ -1,5 +1,8 @@
 [workspace]
 
 members = [
-    "pipeline"
+    "pipeline",
+    "lookahead_buffer",
+    "notion_formula_core",
+    "notion_formula_runner"
 ]
