@@ -1,12 +1,16 @@
 pub struct LookaheadBuffer<T: Clone> {
     buf: Vec<T>,
     start: usize,
-    current: usize
+    current: usize,
 }
 
 impl<T: Clone> LookaheadBuffer<T> {
     pub fn new(buffer: Vec<T>) -> Self {
-        LookaheadBuffer { buf: buffer, current: 0, start: 0 }
+        LookaheadBuffer {
+            buf: buffer,
+            current: 0,
+            start: 0,
+        }
     }
 
     pub fn peek(&self, n: usize) -> Option<T> {
