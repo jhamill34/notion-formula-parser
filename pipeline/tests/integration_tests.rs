@@ -18,32 +18,15 @@ impl Handler<u8, Vec<u8>> for StepOne {
     }
 }
 
-struct StepTwo;
-impl Handler<Vec<u8>, String> for StepTwo {
-    fn handle(&self, input: Vec<u8>) -> HandlerResult<String> {
-        match String::from_utf8(input) {
-            Ok(value) => Ok(value),
-            Err(e) => panic!(e),
-        }
+fn step_two(input: Vec<u8>) -> HandlerResult<String> {
+    match String::from_utf8(input) {
+        Ok(value) => Ok(value),
+        Err(e) => panic!(e),
     }
 }
 
-enum TestErrors {
-    SimpleError,
-}
-impl Error for TestErrors {
-    fn description(&self) -> String {
-        match &self {
-            Self::SimpleError => String::from("I'm a simple error..."),
-        }
-    }
-}
-
-struct StepThree;
-impl Handler<Vec<u8>, Vec<u8>> for StepThree {
-    fn handle(&self, _input: Vec<u8>) -> HandlerResult<Vec<u8>> {
-        Err(HandlerError::new(TestErrors::SimpleError))
-    }
+fn step_three(_input: Vec<u8>) -> HandlerResult<Vec<u8>> {
+    Err(SimpleError::new("Something went wrong".into()))
 }
 
 #[cfg(test)]
@@ -60,7 +43,7 @@ mod test {
 
     #[test]
     fn step_two_works() {
-        let step = StepTwo;
+        let step = FnHandler::new(step_two);
         let result = step.handle(vec![65, 66, 67]).unwrap();
 
         assert_eq!("ABC", result);
@@ -68,27 +51,29 @@ mod test {
 
     #[test]
     fn step_three_fails() {
-        let step = StepThree;
-        let result = step.handle(vec![65, 66, 67]).unwrap_err().description();
+        let step = FnHandler::new(step_three);
+        let result = format!("{}", step.handle(vec![65, 66, 67]).unwrap_err());
 
-        assert_eq!("I'm a simple error...", result)
+        assert_eq!("Something went wrong", result)
     }
 
     #[test]
     fn test_simple_workflow_works() {
-        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepTwo);
+        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(FnHandler::new(step_two));
 
         let result = pipe.start(4).unwrap();
 
-        assert_eq!(String::from("ABCD"), result);
+        assert_eq!("ABCD", result);
     }
 
     #[test]
     fn test_workflow_errors_in_the_middle() {
-        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(StepThree).add(StepTwo);
+        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne)
+            .add(FnHandler::new(step_three))
+            .add(FnHandler::new(step_two));
 
-        let result = pipe.start(4).unwrap_err().description();
+        let result = format!("{}", pipe.start(4).unwrap_err());
 
-        assert_eq!("I'm a simple error...", result);
+        assert_eq!("Something went wrong", result);
     }
 }

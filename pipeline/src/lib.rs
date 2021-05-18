@@ -1,40 +1,46 @@
+use std::error::Error;
 use std::fmt;
-use std::fmt::Formatter;
 
-pub trait Error {
-    fn description(&self) -> String;
+pub type HandlerResult<T> = Result<T, Box<dyn Error>>;
+
+#[derive(Debug)]
+pub struct SimpleError {
+    details: String
 }
-
-pub struct HandlerError<'a>(Box<dyn Error + 'a>);
-
-impl<'a> HandlerError<'a> {
-    pub fn new(err: impl Error + 'a) -> Self {
-        HandlerError(Box::new(err))
+impl SimpleError {
+    pub fn new(details: String) -> Box<Self> {
+        Box::new(SimpleError { details })
     }
 }
-impl Error for HandlerError<'_> {
-    fn description(&self) -> String {
-        self.0.description()
+impl fmt::Display for SimpleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.details)
     }
 }
-
-impl fmt::Debug for HandlerError<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.description())
-    }
-}
-
-pub type HandlerResult<'a, T> = Result<T, HandlerError<'a>>;
+impl Error for SimpleError {}
 
 pub trait Handler<I, O> {
     fn handle(&self, input: I) -> HandlerResult<O>;
+}
+
+pub struct FnHandler<I, O> {
+    func: fn (I) -> HandlerResult<O>
+}
+impl<I, O> FnHandler<I, O> {
+    pub fn new(func: fn(I) -> HandlerResult<O>) -> Self {
+        FnHandler { func }
+    }
+}
+impl<I, O> Handler<I, O> for FnHandler<I, O> {
+    fn handle(&self, input: I) -> HandlerResult<O> {
+        (self.func)(input)
+    }
 }
 
 struct Stage<'a, I, K, O> {
     current: Box<dyn Handler<I, K> + 'a>,
     next: Box<dyn Handler<K, O> + 'a>,
 }
-
 impl<I, K, O> Handler<I, O> for Stage<'_, I, K, O> {
     fn handle(&self, input: I) -> HandlerResult<O> {
         return match self.current.handle(input) {
@@ -43,7 +49,6 @@ impl<I, K, O> Handler<I, O> for Stage<'_, I, K, O> {
         };
     }
 }
-
 impl<'a, I, K, O> Stage<'a, I, K, O> {
     fn new(
         current: Box<dyn Handler<I, K> + 'a>,
