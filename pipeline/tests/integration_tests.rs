@@ -59,9 +59,7 @@ mod test {
 
     #[test]
     fn test_simple_workflow_works() {
-        let pipe: Pipeline<u8, String> = Pipeline::new()
-            .add(StepOne)
-            .add(FnHandler::new(step_two));
+        let pipe: Pipeline<u8, String> = Pipeline::new().add(StepOne).add(FnHandler::new(step_two));
 
         let result = pipe.start(4).unwrap();
 

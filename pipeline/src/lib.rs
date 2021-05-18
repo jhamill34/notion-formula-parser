@@ -5,7 +5,7 @@ pub type HandlerResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
 pub struct SimpleError {
-    details: String
+    details: String,
 }
 impl SimpleError {
     pub fn new(details: String) -> Box<Self> {
@@ -24,21 +24,21 @@ pub trait Handler<I, O> {
 }
 
 pub struct ClosureHandler<'a, I, O> {
-    closure: Box<dyn Fn(I) -> HandlerResult<O> + 'a>
+    closure: Box<dyn Fn(I) -> HandlerResult<O> + 'a>,
 }
 impl<'a, I, O> ClosureHandler<'a, I, O> {
     pub fn new(closure: Box<dyn Fn(I) -> HandlerResult<O> + 'a>) -> Self {
         ClosureHandler { closure }
     }
 }
-impl <I, O> Handler<I, O> for ClosureHandler<'_, I, O> {
+impl<I, O> Handler<I, O> for ClosureHandler<'_, I, O> {
     fn handle(&self, input: I) -> HandlerResult<O> {
         (self.closure)(input)
     }
 }
 
 pub struct FnHandler<I, O> {
-    func: fn (I) -> HandlerResult<O>
+    func: fn(I) -> HandlerResult<O>,
 }
 impl<I, O> FnHandler<I, O> {
     pub fn new(func: fn(I) -> HandlerResult<O>) -> Self {
@@ -73,11 +73,11 @@ impl<'a, I, K, O> Stage<'a, I, K, O> {
 pub struct Pipeline<'a, I, O> {
     head: Box<dyn Handler<I, O> + 'a>,
 }
-impl <'a, I: 'a> Pipeline<'a, I, I> {
+impl<'a, I: 'a> Pipeline<'a, I, I> {
     pub fn new() -> Pipeline<'a, I, I> {
         let handler: ClosureHandler<I, I> = ClosureHandler::new(Box::new(|x| Ok(x)));
         Pipeline {
-            head: Box::new(handler)
+            head: Box::new(handler),
         }
     }
 }

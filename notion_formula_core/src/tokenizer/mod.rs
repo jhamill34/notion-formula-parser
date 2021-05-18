@@ -1,11 +1,11 @@
 mod util;
 
 use lookahead_buffer::LookaheadBuffer;
-use pipeline::{Handler, HandlerResult};
+use pipeline::{ HandlerResult };
 use util::*;
 
 #[derive(Debug, PartialEq)]
-enum TokenType {
+pub enum TokenType {
     LeftParen,
     RightParen,
     Comma,
@@ -37,114 +37,110 @@ enum TokenType {
 }
 
 #[derive(Debug, PartialEq)]
-struct Token {
+pub struct Token {
     token_type: TokenType,
     line: u32,
     column: u32,
 }
 
-struct Tokenizer;
-impl Handler<Vec<u8>, Vec<Token>> for Tokenizer {
-    fn handle(&self, input: Vec<u8>) -> HandlerResult<Vec<Token>> {
-        let mut result: Vec<Token> = Vec::new();
-        let mut buffer = LookaheadBuffer::new(input);
+pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
+    let mut result: Vec<Token> = Vec::new();
+    let mut buffer = LookaheadBuffer::new(input);
 
-        while let Some(value) = buffer.peek(0) {
-            buffer.advance();
-            let token_type = match value {
-                b'(' => TokenType::LeftParen,
-                b')' => TokenType::RightParen,
-                b',' => TokenType::Comma,
-                b'?' => TokenType::QuestionMark,
-                b':' => TokenType::Colon,
-                b'+' => TokenType::Plus,
-                b'-' => TokenType::Minus,
-                b'*' => TokenType::Star,
-                b'/' => TokenType::Slash,
-                b'%' => TokenType::Percent,
-                b'^' => TokenType::Caret,
-                b'>' => {
-                    let next_value = buffer.peek(0);
-                    match next_value {
-                        Some(b'=') => {
-                            buffer.advance();
-                            TokenType::GreaterEqual
-                        }
-                        _ => TokenType::Greater,
-                    }
-                }
-                b'<' => {
-                    let next_value = buffer.peek(0);
-                    match next_value {
-                        Some(b'=') => {
-                            buffer.advance();
-                            TokenType::LessEqual
-                        }
-                        _ => TokenType::Less,
-                    }
-                }
-                b'=' => {
-                    let next_value = buffer.peek(0);
-                    match next_value {
-                        Some(b'=') => {
-                            buffer.advance();
-                            TokenType::EqualEqual
-                        }
-                        _ => TokenType::Unknown(value),
-                    }
-                }
-                b'!' => {
-                    let next_value = buffer.peek(0);
-                    match next_value {
-                        Some(b'=') => {
-                            buffer.advance();
-                            TokenType::BangEqual
-                        }
-                        _ => TokenType::Unknown(value),
-                    }
-                }
-                b'"' => {
-                    loop {
-                        match buffer.peek(0) {
-                            Some(b'"') => {
-                                buffer.advance();
-                                break;
-                            }
-                            None => panic!("Unterminated string literal"),
-                            _ => buffer.advance(),
-                        }
-                    }
-                    TokenType::StringLiteral(buffer.get_slice())
-                }
-                b' ' | b'\r' | b'\t' | b'\n' => TokenType::Ignored,
-                b'0'..=b'9' => {
-                    consume_number_literal(&mut buffer);
-                    TokenType::NumberLiteral(buffer.get_slice())
-                }
-                b'a'..=b'z' | b'A'..=b'Z' => {
-                    while let Some(b'a'..=b'z') | Some(b'A'..=b'Z') | Some(b'0'..=b'9') =
-                        buffer.peek(0)
-                    {
+    while let Some(value) = buffer.peek(0) {
+        buffer.advance();
+        let token_type = match value {
+            b'(' => TokenType::LeftParen,
+            b')' => TokenType::RightParen,
+            b',' => TokenType::Comma,
+            b'?' => TokenType::QuestionMark,
+            b':' => TokenType::Colon,
+            b'+' => TokenType::Plus,
+            b'-' => TokenType::Minus,
+            b'*' => TokenType::Star,
+            b'/' => TokenType::Slash,
+            b'%' => TokenType::Percent,
+            b'^' => TokenType::Caret,
+            b'>' => {
+                let next_value = buffer.peek(0);
+                match next_value {
+                    Some(b'=') => {
                         buffer.advance();
+                        TokenType::GreaterEqual
                     }
-                    check_keyword(&buffer.get_slice())
+                    _ => TokenType::Greater,
                 }
-                _ => TokenType::Unknown(value),
-            };
-
-            match token_type {
-                TokenType::Ignored | TokenType::Unknown(_) => (),
-                _ => result.push(Token {
-                    token_type,
-                    line: 1,
-                    column: 1,
-                }),
             }
-            buffer.commit();
-        }
+            b'<' => {
+                let next_value = buffer.peek(0);
+                match next_value {
+                    Some(b'=') => {
+                        buffer.advance();
+                        TokenType::LessEqual
+                    }
+                    _ => TokenType::Less,
+                }
+            }
+            b'=' => {
+                let next_value = buffer.peek(0);
+                match next_value {
+                    Some(b'=') => {
+                        buffer.advance();
+                        TokenType::EqualEqual
+                    }
+                    _ => TokenType::Unknown(value),
+                }
+            }
+            b'!' => {
+                let next_value = buffer.peek(0);
+                match next_value {
+                    Some(b'=') => {
+                        buffer.advance();
+                        TokenType::BangEqual
+                    }
+                    _ => TokenType::Unknown(value),
+                }
+            }
+            b'"' => {
+                loop {
+                    match buffer.peek(0) {
+                        Some(b'"') => {
+                            buffer.advance();
+                            break;
+                        }
+                        None => panic!("Unterminated string literal"),
+                        _ => buffer.advance(),
+                    }
+                }
+                TokenType::StringLiteral(buffer.get_slice())
+            }
+            b' ' | b'\r' | b'\t' | b'\n' => TokenType::Ignored,
+            b'0'..=b'9' => {
+                consume_number_literal(&mut buffer);
+                TokenType::NumberLiteral(buffer.get_slice())
+            }
+            b'a'..=b'z' | b'A'..=b'Z' => {
+                while let Some(b'a'..=b'z') | Some(b'A'..=b'Z') | Some(b'0'..=b'9') = buffer.peek(0)
+                {
+                    buffer.advance();
+                }
+                check_keyword(&buffer.get_slice())
+            }
+            _ => TokenType::Unknown(value),
+        };
 
-        Ok(result)
+        match token_type {
+            TokenType::Ignored | TokenType::Unknown(_) => (),
+            _ => result.push(Token {
+                token_type,
+                line: 1,
+                column: 1,
+            }),
+        }
+        buffer.commit();
     }
+
+    Ok(result)
 }
 
 fn check_keyword(input: &[u8]) -> TokenType {
@@ -155,7 +151,7 @@ fn check_keyword(input: &[u8]) -> TokenType {
         Ok("true") => TokenType::True,
         Ok("false") => TokenType::False,
         Ok(value) => TokenType::Identifier(value.into()),
-        Err(e) => panic!(e)
+        Err(e) => panic!(e),
     }
 }
 
@@ -164,12 +160,10 @@ mod test {
     use super::TokenType::*;
     use super::*;
 
-    const TOKENIZER: Tokenizer = Tokenizer;
-
     #[test]
     fn test_can_handle_single_byte_tokens() {
         let input: Vec<u8> = "( ) , ? : + - * % ^ /".into();
-        let result = TOKENIZER.handle(input).unwrap();
+        let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![
@@ -236,7 +230,7 @@ mod test {
     #[test]
     fn test_can_handle_double_byte_tokens() {
         let input: Vec<u8> = ">= <= > == < != ==".into();
-        let result = TOKENIZER.handle(input).unwrap();
+        let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![
@@ -283,7 +277,7 @@ mod test {
     #[test]
     fn test_can_handle_string_literals() {
         let input: Vec<u8> = "\"hello world\"".into();
-        let result = TOKENIZER.handle(input).unwrap();
+        let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![Token {
@@ -298,7 +292,7 @@ mod test {
     #[test]
     fn test_can_handle_number_literals() {
         let input: Vec<u8> = "123 123.456 2e3 2E4 2e-1 2e+4 1.2E+3".into();
-        let result = TOKENIZER.handle(input).unwrap();
+        let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![
@@ -345,7 +339,7 @@ mod test {
     #[test]
     fn test_can_handle_identifiers() {
         let input: Vec<u8> = "foo and Bar or baz not".into();
-        let result = TOKENIZER.handle(input).unwrap();
+        let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![
@@ -388,7 +382,7 @@ mod test {
     #[ignore]
     fn test_error_on_unclosed_string_literal() {
         let input: Vec<u8> = "\"hello world".into();
-        let _result = TOKENIZER.handle(input).unwrap();
+        let _result = tokenizer(input).unwrap();
 
         // Not sure about assertion yet...
     }
