@@ -32,6 +32,7 @@ fn step_three(_input: Vec<u8>) -> HandlerResult<Vec<u8>> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn step_one_works() {
@@ -59,7 +60,9 @@ mod test {
 
     #[test]
     fn test_simple_workflow_works() {
-        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne).add(FnHandler::new(step_two));
+        let pipe: Pipeline<u8, String> = Pipeline::new()
+            .add(StepOne)
+            .add(FnHandler::new(step_two));
 
         let result = pipe.start(4).unwrap();
 
@@ -68,12 +71,21 @@ mod test {
 
     #[test]
     fn test_workflow_errors_in_the_middle() {
-        let pipe: Pipeline<u8, String> = Pipeline::new(StepOne)
+        let pipe: Pipeline<u8, String> = Pipeline::new()
+            .add(StepOne)
             .add(FnHandler::new(step_three))
             .add(FnHandler::new(step_two));
 
         let result = format!("{}", pipe.start(4).unwrap_err());
 
         assert_eq!("Something went wrong", result);
+    }
+
+    #[test]
+    fn test_empty_pipe_returns_input() {
+        let pipe = Pipeline::new();
+        let result = pipe.start(5).unwrap();
+
+        assert_eq!(5, result);
     }
 }
