@@ -32,7 +32,6 @@ fn step_three(_input: Vec<u8>) -> HandlerResult<Vec<u8>> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::error::Error;
 
     #[test]
     fn step_one_works() {

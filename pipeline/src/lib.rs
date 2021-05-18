@@ -57,10 +57,8 @@ struct Stage<'a, I, K, O> {
 }
 impl<I, K, O> Handler<I, O> for Stage<'_, I, K, O> {
     fn handle(&self, input: I) -> HandlerResult<O> {
-        return match self.current.handle(input) {
-            Ok(current_result) => self.next.handle(current_result),
-            Err(e) => Err(e),
-        };
+        let current = self.current.handle(input)?;
+        self.next.handle(current)
     }
 }
 impl<'a, I, K, O> Stage<'a, I, K, O> {
