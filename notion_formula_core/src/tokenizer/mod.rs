@@ -46,6 +46,7 @@ pub struct Token {
 pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     let mut result: Vec<Token> = Vec::new();
     let mut buffer = LookaheadBuffer::new(input);
+    let mut column = 1;
 
     while let Some(value) = buffer.peek(0) {
         buffer.advance();
@@ -134,9 +135,10 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
             _ => result.push(Token {
                 token_type,
                 line: 1,
-                column: 1,
+                column,
             }),
         }
+        column = column + buffer.get_slice().len() as u32;
         buffer.commit();
     }
 
@@ -175,52 +177,52 @@ mod test {
                 Token {
                     token_type: RightParen,
                     line: 1,
-                    column: 1
+                    column: 3
                 },
                 Token {
                     token_type: Comma,
                     line: 1,
-                    column: 1
+                    column: 5
                 },
                 Token {
                     token_type: QuestionMark,
                     line: 1,
-                    column: 1
+                    column: 7
                 },
                 Token {
                     token_type: Colon,
                     line: 1,
-                    column: 1
+                    column: 9
                 },
                 Token {
                     token_type: Plus,
                     line: 1,
-                    column: 1
+                    column: 11
                 },
                 Token {
                     token_type: Minus,
                     line: 1,
-                    column: 1
+                    column: 13
                 },
                 Token {
                     token_type: Star,
                     line: 1,
-                    column: 1
+                    column: 15
                 },
                 Token {
                     token_type: Percent,
                     line: 1,
-                    column: 1
+                    column: 17
                 },
                 Token {
                     token_type: Caret,
                     line: 1,
-                    column: 1
+                    column: 19
                 },
                 Token {
                     token_type: Slash,
                     line: 1,
-                    column: 1
+                    column: 21
                 },
             ],
             result
@@ -242,32 +244,32 @@ mod test {
                 Token {
                     token_type: LessEqual,
                     line: 1,
-                    column: 1
+                    column: 4
                 },
                 Token {
                     token_type: Greater,
                     line: 1,
-                    column: 1
+                    column: 7
                 },
                 Token {
                     token_type: EqualEqual,
                     line: 1,
-                    column: 1
+                    column: 9
                 },
                 Token {
                     token_type: Less,
                     line: 1,
-                    column: 1
+                    column: 12
                 },
                 Token {
                     token_type: BangEqual,
                     line: 1,
-                    column: 1
+                    column: 14
                 },
                 Token {
                     token_type: EqualEqual,
                     line: 1,
-                    column: 1
+                    column: 17
                 },
             ],
             result
@@ -304,32 +306,32 @@ mod test {
                 Token {
                     token_type: NumberLiteral("123.456".into()),
                     line: 1,
-                    column: 1
+                    column: 5
                 },
                 Token {
                     token_type: NumberLiteral("2e3".into()),
                     line: 1,
-                    column: 1
+                    column: 13
                 },
                 Token {
                     token_type: NumberLiteral("2E4".into()),
                     line: 1,
-                    column: 1
+                    column: 17
                 },
                 Token {
                     token_type: NumberLiteral("2e-1".into()),
                     line: 1,
-                    column: 1
+                    column: 21
                 },
                 Token {
                     token_type: NumberLiteral("2e+4".into()),
                     line: 1,
-                    column: 1
+                    column: 26
                 },
                 Token {
                     token_type: NumberLiteral("1.2E+3".into()),
                     line: 1,
-                    column: 1
+                    column: 31
                 },
             ],
             result
@@ -351,27 +353,27 @@ mod test {
                 Token {
                     token_type: And,
                     line: 1,
-                    column: 1
+                    column: 5
                 },
                 Token {
                     token_type: Identifier("Bar".into()),
                     line: 1,
-                    column: 1
+                    column: 9
                 },
                 Token {
                     token_type: Or,
                     line: 1,
-                    column: 1
+                    column: 13
                 },
                 Token {
                     token_type: Identifier("baz".into()),
                     line: 1,
-                    column: 1
+                    column: 16
                 },
                 Token {
                     token_type: Not,
                     line: 1,
-                    column: 1
+                    column: 20
                 },
             ],
             result
