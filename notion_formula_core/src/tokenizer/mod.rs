@@ -23,16 +23,16 @@ pub enum TokenType {
     GreaterEqual,
     Less,
     LessEqual,
-    Identifier(Vec<u8>),
-    StringLiteral(Vec<u8>),
-    NumberLiteral(Vec<u8>),
+    Identifier(String),
+    StringLiteral(String),
+    NumberLiteral(String),
     True,
     False,
     And,
     Or,
     Not,
     Eof,
-    Unknown(u8),
+    Unknown(char),
     Ignored,
 }
 
@@ -48,7 +48,7 @@ impl Token {
     }
 }
 
-pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
+pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
     let mut result: Vec<Token> = Vec::new();
     let mut buffer = LookaheadBuffer::new(input);
     let mut column = 1;
@@ -57,61 +57,61 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     while let Some(value) = buffer.peek(0) {
         buffer.advance();
         let token_type = match value {
-            b'(' => TokenType::LeftParen,
-            b')' => TokenType::RightParen,
-            b',' => TokenType::Comma,
-            b'?' => TokenType::QuestionMark,
-            b':' => TokenType::Colon,
-            b'+' => TokenType::Plus,
-            b'-' => TokenType::Minus,
-            b'*' => TokenType::Star,
-            b'/' => TokenType::Slash,
-            b'%' => TokenType::Percent,
-            b'^' => TokenType::Caret,
-            b'>' => {
+            '(' => TokenType::LeftParen,
+            ')' => TokenType::RightParen,
+            ',' => TokenType::Comma,
+            '?' => TokenType::QuestionMark,
+            ':' => TokenType::Colon,
+            '+' => TokenType::Plus,
+            '-' => TokenType::Minus,
+            '*' => TokenType::Star,
+            '/' => TokenType::Slash,
+            '%' => TokenType::Percent,
+            '^' => TokenType::Caret,
+            '>' => {
                 let next_value = buffer.peek(0);
                 match next_value {
-                    Some(b'=') => {
+                    Some('=') => {
                         buffer.advance();
                         TokenType::GreaterEqual
                     }
                     _ => TokenType::Greater,
                 }
             }
-            b'<' => {
+            '<' => {
                 let next_value = buffer.peek(0);
                 match next_value {
-                    Some(b'=') => {
+                    Some('=') => {
                         buffer.advance();
                         TokenType::LessEqual
                     }
                     _ => TokenType::Less,
                 }
             }
-            b'=' => {
+            '=' => {
                 let next_value = buffer.peek(0);
                 match next_value {
-                    Some(b'=') => {
+                    Some('=') => {
                         buffer.advance();
                         TokenType::EqualEqual
                     }
                     _ => TokenType::Unknown(value),
                 }
             }
-            b'!' => {
+            '!' => {
                 let next_value = buffer.peek(0);
                 match next_value {
-                    Some(b'=') => {
+                    Some('=') => {
                         buffer.advance();
                         TokenType::BangEqual
                     }
                     _ => TokenType::Unknown(value),
                 }
             }
-            b'"' => {
+            '"' => {
                 loop {
                     match buffer.peek(0) {
-                        Some(b'"') => {
+                        Some('"') => {
                             buffer.advance();
                             break;
                         }
@@ -119,20 +119,23 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
                         _ => buffer.advance(),
                     }
                 }
-                TokenType::StringLiteral(buffer.get_slice())
+
+                let str_literal = buffer.get_slice().iter().collect();
+                TokenType::StringLiteral(str_literal)
             }
-            b' ' | b'\r' | b'\t' => TokenType::Ignored,
-            b'\n' => {
+            ' ' | '\r' | '\t' => TokenType::Ignored,
+            '\n' => {
                 line = line + 1;
                 column = 0;
                 TokenType::Ignored
             },
-            b'0'..=b'9' => {
+            '0'..='9' => {
                 consume_number_literal(&mut buffer);
-                TokenType::NumberLiteral(buffer.get_slice())
+                let num_literal = buffer.get_slice().iter().collect();
+                TokenType::NumberLiteral(num_literal)
             }
-            b'a'..=b'z' | b'A'..=b'Z' => {
-                while let Some(b'a'..=b'z') | Some(b'A'..=b'Z') | Some(b'0'..=b'9') = buffer.peek(0)
+            'a'..='z' | 'A'..='Z' => {
+                while let Some('a'..='z') | Some('A'..='Z') | Some('0'..='9') = buffer.peek(0)
                 {
                     buffer.advance();
                 }
@@ -144,7 +147,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
 
         match token_type {
             TokenType::Ignored => (),
-            TokenType::Unknown(_) => (),
+            TokenType::Unknown(value) => panic!(format!("Unknown character found {}", value as char)),
             _ => result.push(Token {
                 token_type,
                 line,
@@ -160,14 +163,15 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     Ok(result)
 }
 
-fn check_keyword(input: &[u8]) -> TokenType {
-    match input {
-        b"or" => TokenType::Or,
-        b"and" => TokenType::And,
-        b"not" => TokenType::Not,
-        b"true" => TokenType::True,
-        b"false" => TokenType::False,
-        _ => TokenType::Identifier(input.into())
+fn check_keyword(input: &[char]) -> TokenType {
+    let result: String = input.iter().collect();
+    match result.as_str() {
+        "or" => TokenType::Or,
+        "and" => TokenType::And,
+        "not" => TokenType::Not,
+        "true" => TokenType::True,
+        "false" => TokenType::False,
+        _ => TokenType::Identifier(result)
     }
 }
 
@@ -178,7 +182,7 @@ mod test {
 
     #[test]
     fn test_can_handle_single_byte_tokens() {
-        let input: Vec<u8> = "( ) , ? : + - * % ^ /".into();
+        let input: Vec<char> = "( ) , ? : + - * % ^ /".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
@@ -250,7 +254,7 @@ mod test {
 
     #[test]
     fn test_can_handle_double_byte_tokens() {
-        let input: Vec<u8> = ">= <= > == < != ==".into();
+        let input: Vec<char> = ">= <= > == < != ==".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
@@ -302,20 +306,20 @@ mod test {
 
     #[test]
     fn test_can_handle_string_literals() {
-        let input: Vec<u8> = "\"hello world\"".into();
+        let input: Vec<char> = "\"hello world 😀\"".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
             vec![
                 Token {
-                    token_type: StringLiteral("\"hello world\"".into()),
+                    token_type: StringLiteral("\"hello world 😀\"".into()),
                     line: 1,
                     column: 1
                 },
                 Token {
                     token_type: Eof,
                     line: 1,
-                    column: 14
+                    column: 16
                 }
             ],
             result
@@ -324,7 +328,7 @@ mod test {
 
     #[test]
     fn test_can_handle_number_literals() {
-        let input: Vec<u8> = "123 123.456 2e3 2E4 2e-1 2e+4 1.2E+3".into();
+        let input: Vec<char> = "123 123.456 2e3 2E4 2e-1 2e+4 1.2E+3".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
@@ -376,7 +380,7 @@ mod test {
 
     #[test]
     fn test_can_handle_identifiers() {
-        let input: Vec<u8> = "foo and Bar or baz not".into();
+        let input: Vec<char> = "foo and Bar or baz not".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
@@ -423,7 +427,7 @@ mod test {
 
     #[test]
     fn test_multiple_lines() {
-        let input: Vec<u8> = "foo\nbar baz".into();
+        let input: Vec<char> = "foo\nbar baz".chars().collect();
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
@@ -456,9 +460,16 @@ mod test {
     #[test]
     #[ignore]
     fn test_error_on_unclosed_string_literal() {
-        let input: Vec<u8> = "\"hello world".into();
+        let input: Vec<char> = "\"hello world".chars().collect();
         let _result = tokenizer(input).unwrap();
 
         // Not sure about assertion yet...
+    }
+
+    #[test]
+    #[ignore]
+    fn test_non_alpha_numeric_in_identifier_causes_error() {
+        let input: Vec<char> = "😀".chars().collect();
+        let result = tokenizer(input).unwrap();
     }
 }
