@@ -3,9 +3,9 @@ mod util;
 use lookahead_buffer::LookaheadBuffer;
 use pipeline::{ HandlerResult };
 use util::*;
-use std::str::Utf8Error;
+use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -37,11 +37,16 @@ pub enum TokenType {
     Ignored,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     token_type: TokenType,
     line: u32,
     column: u32,
+}
+impl Token {
+    pub fn new(token_type: TokenType, line: u32, column: u32) -> Self {
+        Token { token_type, line, column }
+    }
 }
 
 pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
@@ -49,6 +54,8 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     let mut buffer = LookaheadBuffer::new(input);
     let mut column = 1;
     let mut line = 1;
+
+    let keyword_map = make_keyword_map();
 
     while let Some(value) = buffer.peek(0) {
         buffer.advance();
@@ -133,10 +140,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
                     buffer.advance();
                 }
 
-                match check_keyword(&buffer.get_slice()) {
-                    Ok(v) => v,
-                    Err(e) => panic!(e)
-                }
+                check_keyword(&buffer.get_slice(), &keyword_map)
             }
             _ => TokenType::Unknown(value),
         };
@@ -159,17 +163,24 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     Ok(result)
 }
 
-fn check_keyword(input: &[u8]) -> Result<TokenType, Utf8Error> {
-    std::str::from_utf8(&input).map(|value| {
-       match value {
-           "or" => TokenType::Or,
-           "and" => TokenType::And,
-           "not" => TokenType::Not,
-           "true" => TokenType::True,
-           "false" => TokenType::False,
-           _ => TokenType::Identifier(value.into()),
-       }
-    })
+fn make_keyword_map() -> HashMap<&'static [u8], TokenType> {
+    let mut keyword_map = HashMap::new();
+
+    keyword_map.insert("or".as_bytes(), TokenType::Or);
+    keyword_map.insert("and".as_bytes(), TokenType::And);
+    keyword_map.insert("not".as_bytes(), TokenType::Not);
+    keyword_map.insert("true".as_bytes(), TokenType::True);
+    keyword_map.insert("false".as_bytes(), TokenType::False);
+
+    keyword_map
+}
+
+fn check_keyword(input: &[u8], keyword_map: &HashMap<&[u8], TokenType>) -> TokenType {
+    if let Some(keyword) = keyword_map.get(input) {
+       keyword.clone()
+    } else {
+       TokenType::Identifier(input.into())
+    }
 }
 
 #[cfg(test)]
