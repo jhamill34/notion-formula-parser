@@ -148,6 +148,8 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
         buffer.commit();
     }
 
+    result.push(Token { token_type: TokenType::Eof, line: 1, column });
+
     Ok(result)
 }
 
@@ -231,6 +233,11 @@ mod test {
                     line: 1,
                     column: 21
                 },
+                Token {
+                    token_type: Eof,
+                    line: 1,
+                    column: 22
+                }
             ],
             result
         )
@@ -278,6 +285,11 @@ mod test {
                     line: 1,
                     column: 17
                 },
+                Token {
+                    token_type: Eof,
+                    line: 1,
+                    column: 19
+                }
             ],
             result
         )
@@ -289,11 +301,18 @@ mod test {
         let result = tokenizer(input).unwrap();
 
         assert_eq!(
-            vec![Token {
-                token_type: StringLiteral("\"hello world\"".into()),
-                line: 1,
-                column: 1
-            },],
+            vec![
+                Token {
+                    token_type: StringLiteral("\"hello world\"".into()),
+                    line: 1,
+                    column: 1
+                },
+                Token {
+                    token_type: Eof,
+                    line: 1,
+                    column: 14
+                }
+            ],
             result
         )
     }
@@ -340,6 +359,11 @@ mod test {
                     line: 1,
                     column: 31
                 },
+                Token {
+                    token_type: Eof,
+                    line: 1,
+                    column: 37
+                }
             ],
             result
         )
@@ -382,6 +406,11 @@ mod test {
                     line: 1,
                     column: 20
                 },
+                Token {
+                    token_type: Eof,
+                    line: 1,
+                    column: 23
+                }
             ],
             result
         )
