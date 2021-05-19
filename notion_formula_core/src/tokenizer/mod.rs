@@ -3,6 +3,7 @@ mod util;
 use lookahead_buffer::LookaheadBuffer;
 use pipeline::{ HandlerResult };
 use util::*;
+use std::str::Utf8Error;
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
@@ -109,7 +110,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
                             buffer.advance();
                             break;
                         }
-                        None => panic!("Unterminated string literal"),
+                        None => panic!("Couldn't find the end of the string, missing '\"'"),
                         _ => buffer.advance(),
                     }
                 }
@@ -125,13 +126,18 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
                 {
                     buffer.advance();
                 }
-                check_keyword(&buffer.get_slice())
+
+                match check_keyword(&buffer.get_slice()) {
+                    Ok(v) => v,
+                    Err(e) => panic!(e)
+                }
             }
             _ => TokenType::Unknown(value),
         };
 
         match token_type {
-            TokenType::Ignored | TokenType::Unknown(_) => (),
+            TokenType::Ignored => (),
+            TokenType::Unknown(_) => (),
             _ => result.push(Token {
                 token_type,
                 line: 1,
@@ -145,16 +151,17 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     Ok(result)
 }
 
-fn check_keyword(input: &[u8]) -> TokenType {
-    match std::str::from_utf8(&input) {
-        Ok("or") => TokenType::Or,
-        Ok("and") => TokenType::And,
-        Ok("not") => TokenType::Not,
-        Ok("true") => TokenType::True,
-        Ok("false") => TokenType::False,
-        Ok(value) => TokenType::Identifier(value.into()),
-        Err(e) => panic!(e),
-    }
+fn check_keyword(input: &[u8]) -> Result<TokenType, Utf8Error> {
+    std::str::from_utf8(&input).map(|value| {
+       match value {
+           "or" => TokenType::Or,
+           "and" => TokenType::And,
+           "not" => TokenType::Not,
+           "true" => TokenType::True,
+           "false" => TokenType::False,
+           _ => TokenType::Identifier(value.into()),
+       }
+    })
 }
 
 #[cfg(test)]
