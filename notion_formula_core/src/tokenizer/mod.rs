@@ -48,6 +48,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
     let mut result: Vec<Token> = Vec::new();
     let mut buffer = LookaheadBuffer::new(input);
     let mut column = 1;
+    let mut line = 1;
 
     while let Some(value) = buffer.peek(0) {
         buffer.advance();
@@ -116,7 +117,12 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
                 }
                 TokenType::StringLiteral(buffer.get_slice())
             }
-            b' ' | b'\r' | b'\t' | b'\n' => TokenType::Ignored,
+            b' ' | b'\r' | b'\t' => TokenType::Ignored,
+            b'\n' => {
+                line = line + 1;
+                column = 0;
+                TokenType::Ignored
+            },
             b'0'..=b'9' => {
                 consume_number_literal(&mut buffer);
                 TokenType::NumberLiteral(buffer.get_slice())
@@ -140,7 +146,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
             TokenType::Unknown(_) => (),
             _ => result.push(Token {
                 token_type,
-                line: 1,
+                line,
                 column,
             }),
         }
@@ -148,7 +154,7 @@ pub fn tokenizer(input: Vec<u8>) -> HandlerResult<Vec<Token>> {
         buffer.commit();
     }
 
-    result.push(Token { token_type: TokenType::Eof, line: 1, column });
+    result.push(Token { token_type: TokenType::Eof, line, column });
 
     Ok(result)
 }
@@ -410,6 +416,38 @@ mod test {
                     token_type: Eof,
                     line: 1,
                     column: 23
+                }
+            ],
+            result
+        )
+    }
+
+    #[test]
+    fn test_multiple_lines() {
+        let input: Vec<u8> = "foo\nbar baz".into();
+        let result = tokenizer(input).unwrap();
+
+        assert_eq!(
+            vec![
+                Token {
+                    token_type: Identifier("foo".into()),
+                    line: 1,
+                    column: 1,
+                },
+                Token {
+                    token_type: Identifier("bar".into()),
+                    line: 2,
+                    column: 1,
+                },
+                Token {
+                    token_type: Identifier("baz".into()),
+                    line: 2,
+                    column: 5,
+                },
+                Token {
+                    token_type: Eof,
+                    line: 2,
+                    column: 8
                 }
             ],
             result
