@@ -1,7 +1,7 @@
 mod util;
 
 use lookahead_buffer::LookaheadBuffer;
-use pipeline::{ HandlerResult };
+use pipeline::HandlerResult;
 use util::*;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -44,7 +44,11 @@ pub struct Token {
 }
 impl Token {
     pub fn new(token_type: TokenType, line: u32, column: u32) -> Self {
-        Token { token_type, line, column }
+        Token {
+            token_type,
+            line,
+            column,
+        }
     }
 }
 
@@ -128,15 +132,14 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
                 line = line + 1;
                 column = 0;
                 TokenType::Ignored
-            },
+            }
             '0'..='9' => {
                 consume_number_literal(&mut buffer);
                 let num_literal = buffer.get_slice().iter().collect();
                 TokenType::NumberLiteral(num_literal)
             }
             'a'..='z' | 'A'..='Z' => {
-                while let Some('a'..='z') | Some('A'..='Z') | Some('0'..='9') = buffer.peek(0)
-                {
+                while let Some('a'..='z') | Some('A'..='Z') | Some('0'..='9') = buffer.peek(0) {
                     buffer.advance();
                 }
 
@@ -147,7 +150,9 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
 
         match token_type {
             TokenType::Ignored => (),
-            TokenType::Unknown(value) => panic!(format!("Unknown character found {}", value as char)),
+            TokenType::Unknown(value) => {
+                panic!(format!("Unknown character found {}", value as char))
+            }
             _ => result.push(Token {
                 token_type,
                 line,
@@ -158,7 +163,11 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
         buffer.commit();
     }
 
-    result.push(Token { token_type: TokenType::Eof, line, column });
+    result.push(Token {
+        token_type: TokenType::Eof,
+        line,
+        column,
+    });
 
     Ok(result)
 }
@@ -171,7 +180,7 @@ fn check_keyword(input: &[char]) -> TokenType {
         "not" => TokenType::Not,
         "true" => TokenType::True,
         "false" => TokenType::False,
-        _ => TokenType::Identifier(result)
+        _ => TokenType::Identifier(result),
     }
 }
 
