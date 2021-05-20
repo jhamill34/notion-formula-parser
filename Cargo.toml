@@ -3,6 +3,5 @@
 members = [
     "pipeline",
     "lookahead_buffer",
-    "notion_formula_core",
-    "notion_formula_runner"
+    "notion_formula_core"
 ]

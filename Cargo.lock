@@ -13,13 +13,5 @@ dependencies = [
 ]
 
 [[package]]
-name = "notion_formula_runner"
-version = "0.1.0"
-dependencies = [
- "notion_formula_core",
- "pipeline",
-]
-
-[[package]]
 name = "pipeline"
 version = "0.1.0"
