@@ -38,9 +38,9 @@ pub enum TokenType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
-    token_type: TokenType,
-    line: u32,
-    column: u32,
+    pub token_type: TokenType,
+    pub line: u32,
+    pub column: u32,
 }
 impl Token {
     pub fn new(token_type: TokenType, line: u32, column: u32) -> Self {
