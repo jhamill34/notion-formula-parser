@@ -316,8 +316,40 @@ fn function_call_expression(buffer: &mut LookaheadBuffer<Token>, id: Expression)
             buffer.advance();
             Ok(Expression::Call(Box::new(id), vec![]))
         },
-        _ => Err(SimpleError::new("Expected a closing parentheses in function call".into()))
+        _ => {
+            let args = function_args(buffer)?;
+
+            let token = get_current_token(buffer)?;
+            match token.token_type {
+                TokenType::RightParen => {
+                    buffer.advance();
+                    Ok(Expression::Call(Box::new(id), args))
+                },
+                _ => Err(SimpleError::new("Expected a closing parentheses in function call".into()))
+            }
+        }
     }
+}
+
+fn function_args(buffer: &mut LookaheadBuffer<Token>) -> HandlerResult<Vec<Expression>> {
+    let mut args: Vec<Expression> = vec![];
+
+    let next_arg = expression(buffer)?;
+    args.push(next_arg);
+
+    loop {
+        let token = get_current_token(buffer)?;
+        match token.token_type {
+            TokenType::Comma => {
+                buffer.advance();
+                let next_arg = expression(buffer)?;
+                args.push(next_arg);
+            },
+            _ => break
+        }
+    }
+
+    Ok(args)
 }
 
 fn constant(buffer: &mut LookaheadBuffer<Token>) -> HandlerResult<Expression> {
@@ -359,7 +391,6 @@ mod test {
     use super::BooleanOperator::*;
     use super::ComparisonOperator::*;
     use crate::tokenizer::TokenType;
-    use crate::tokenizer::TokenType::NumberLiteral;
 
     #[test]
     fn test_number() {
@@ -695,9 +726,8 @@ mod test {
     #[ignore]
     fn test_ternary_expression() { }
 
-
     #[test]
-    fn test_function_calls() {
+    fn test_no_args_function_calls() {
         let input = vec![
             Token::new(TokenType::Identifier("foo".into()), 1, 1),
             Token::new(TokenType::LeftParen, 1, 1),
@@ -710,6 +740,37 @@ mod test {
             Call(
                 Box::new(Identifier("foo".into())),
                 vec![]
+            ),
+            result
+        )
+    }
+
+    #[test]
+    fn test_function_calls() {
+        let input = vec![
+            Token::new(TokenType::Identifier("foo".into()), 1, 1),
+            Token::new(TokenType::LeftParen, 1, 1),
+            Token::new(TokenType::Identifier("bar".into()), 1, 1),
+            Token::new(TokenType::Comma, 1, 1),
+            Token::new(TokenType::NumberLiteral("1".into()), 1, 1),
+            Token::new(TokenType::Plus, 1, 1),
+            Token::new(TokenType::NumberLiteral("2".into()), 1, 1),
+            Token::new(TokenType::RightParen, 1, 1),
+            Token::new(TokenType::Eof, 1, 1),
+        ];
+        let result = parser(input).unwrap();
+
+        assert_eq!(
+            Call(
+                Box::new(Identifier("foo".into())),
+                vec![
+                    Identifier("bar".into()),
+                    BinaryOp(
+                        Box::new(Number("1".into())),
+                        Add,
+                        Box::new(Number("2".into()))
+                    )
+                ]
             ),
             result
         )
