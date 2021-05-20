@@ -470,6 +470,6 @@ mod test {
     #[ignore]
     fn test_non_alpha_numeric_in_identifier_causes_error() {
         let input: Vec<char> = "😀".chars().collect();
-        let result = tokenizer(input).unwrap();
+        let _result = tokenizer(input).unwrap();
     }
 }

@@ -1,6 +1,7 @@
 use crate::tokenizer::{Token, TokenType};
 use pipeline::{HandlerResult, SimpleError};
 use lookahead_buffer::LookaheadBuffer;
+use crate::parser::Expression::TernaryOp;
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
@@ -59,7 +60,30 @@ fn expression(buffer: &mut LookaheadBuffer<Token>) -> HandlerResult<Expression> 
 }
 
 fn ternary_expression(buffer: &mut LookaheadBuffer<Token>) -> HandlerResult<Expression> {
-    or_expression(buffer)
+    let test = or_expression(buffer)?;
+
+    let token = get_current_token(buffer)?;
+    match token.token_type {
+        TokenType::QuestionMark => {
+            buffer.advance();
+
+            let accept = or_expression(buffer)?;
+            let token = get_current_token(buffer)?;
+            match token.token_type {
+                TokenType::Colon => {
+                    buffer.advance();
+                    let reject = expression(buffer)?;
+                    Ok(TernaryOp(
+                        Box::new(test),
+                        Box::new(accept),
+                        Box::new(reject)
+                    ))
+                },
+                _ => Err(SimpleError::new("Expected colon in ternary expression".into()))
+            }
+        },
+        _ => Ok(test)
+    }
 }
 
 fn or_expression(buffer: &mut LookaheadBuffer<Token>) -> HandlerResult<Expression> {
@@ -723,8 +747,26 @@ mod test {
     }
 
     #[test]
-    #[ignore]
-    fn test_ternary_expression() { }
+    fn test_ternary_expression() {
+        let input = vec![
+            Token::new(TokenType::Identifier("x".into()), 1, 1),
+            Token::new(TokenType::QuestionMark, 1, 1),
+            Token::new(TokenType::Identifier("y".into()), 1, 1),
+            Token::new(TokenType::Colon, 1, 1),
+            Token::new(TokenType::Identifier("z".into()), 1, 1),
+            Token::new(TokenType::Eof, 1, 1),
+        ];
+        let result = parser(input).unwrap();
+
+        assert_eq!(
+            TernaryOp(
+                Box::new(Identifier("x".into())),
+                Box::new(Identifier("y".into())),
+                Box::new(Identifier("z".into())),
+            ),
+            result
+        )
+    }
 
     #[test]
     fn test_no_args_function_calls() {
