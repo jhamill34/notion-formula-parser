@@ -191,7 +191,7 @@ mod test {
     }
 
     #[test]
-    fn test_prefix_expresssion() {
+    fn test_prefix_expression() {
         let input = vec![
             Token::new(TokenType::Minus, 1, 1),
             Token::new(TokenType::Minus, 1, 1),
@@ -210,7 +210,7 @@ mod test {
     }
 
     #[test]
-    fn test_mult_expresssion() {
+    fn test_mult_expression() {
         let input = vec![
             Token::new(TokenType::Identifier("foo".into()), 1, 1),
             Token::new(TokenType::Star, 1, 1),
@@ -236,7 +236,7 @@ mod test {
     }
 
     #[test]
-    fn test_additive_expresssion() {
+    fn test_additive_expression() {
         let input = vec![
             Token::new(TokenType::NumberLiteral("1".into()), 1, 1),
             Token::new(TokenType::Plus, 1, 1),
@@ -262,7 +262,7 @@ mod test {
     }
 
     #[test]
-    fn test_relational_expresssion() {
+    fn test_relational_expression() {
         let input = vec![
             Token::new(TokenType::Identifier("foo".into()), 1, 1),
             Token::new(TokenType::GreaterEqual, 1, 1),
@@ -282,7 +282,7 @@ mod test {
     }
 
     #[test]
-    fn test_equality_expresssion() {
+    fn test_equality_expression() {
         let input = vec![
             Token::new(TokenType::StringLiteral("\"foo\"".into()), 1, 1),
             Token::new(TokenType::BangEqual, 1, 1),
@@ -327,7 +327,7 @@ mod test {
     }
 
     #[test]
-    fn test_and_expresssion() {
+    fn test_and_expression() {
         let input = vec![
             Token::new(TokenType::Identifier("a".into()), 1, 1),
             Token::new(TokenType::And, 1, 1),
@@ -353,7 +353,7 @@ mod test {
     }
 
     #[test]
-    fn test_or_expresssion() {
+    fn test_or_expression() {
         let input = vec![
             Token::new(TokenType::Identifier("a".into()), 1, 1),
             Token::new(TokenType::Or, 1, 1),
