@@ -2,6 +2,7 @@ use crate::parser::BooleanOperator;
 use crate::parser::ComparisonOperator;
 use crate::parser::Expression;
 use crate::parser::MathOperator;
+use crate::parser::UnaryOperator;
 use pipeline::HandlerResult;
 use pipeline::SimpleError;
 
@@ -16,6 +17,7 @@ fn visit_expression(input: Expression) -> HandlerResult<RuntimeType> {
     use BooleanOperator::*;
     use ComparisonOperator::*;
     use MathOperator::*;
+    use UnaryOperator::*;
     use RuntimeType::*;
 
     match input {
@@ -95,8 +97,38 @@ fn visit_expression(input: Expression) -> HandlerResult<RuntimeType> {
                 ))),
             }
         }
-        Expression::UnaryOp(_, _) => {
-            unimplemented!()
+        Expression::UnaryOp(op, rhs) => {
+            let result = visit_expression(*rhs)?;
+            match op {
+                UAdd => {
+                    match result {
+                        Str(value) => {
+                            let result = value.parse::<f64>()?;
+                            Ok(Num(result))
+                        },
+                        Bool(value) => Ok(Num(value as u8 as f64)),
+                        _ => Ok(result)
+                    }
+                }
+                USub => {
+                    match result {
+                        Num(value) => Ok(Num(-value)),
+                        _ => Err(SimpleError::new(format!(
+                            "Can't use unary minus on non number values: {:?}",
+                            result
+                        )))
+                    }
+                }
+                Not => {
+                    match result {
+                        Bool(value) => Ok(Bool(!value)),
+                        _ => Err(SimpleError::new(format!(
+                            "Can't perform boolean operations on non boolean values: {:?}",
+                            result
+                        )))
+                    }
+                }
+            }
         }
         Expression::TernaryOp(_, _, _) => {
             unimplemented!()
@@ -242,5 +274,47 @@ mod test {
         let result = interpret(input).unwrap();
 
         assert_eq!(RuntimeType::Bool(true), result);
+    }
+    #[test]
+    fn test_unary_sub_operation() {
+        let input = Expression::UnaryOp(
+            UnaryOperator::USub,
+            Box::new(Expression::Number("123".into())),
+        );
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Num(-123.0), result);
+    }
+    #[test]
+    fn test_unary_add_operation_with_number() {
+        let input = Expression::UnaryOp(
+            UnaryOperator::UAdd,
+            Box::new(Expression::Number("123".into())),
+        );
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Num(123.0), result);
+    }
+    #[test]
+    fn test_unary_add_operation_with_string() {
+        let input =
+            Expression::UnaryOp(UnaryOperator::UAdd, Box::new(Expression::Str("123".into())));
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Num(123.0), result);
+    }
+    #[test]
+    fn test_unary_add_operation_with_bool() {
+        let input = Expression::UnaryOp(UnaryOperator::UAdd, Box::new(Expression::Bool(true)));
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Num(1.0), result);
+    }
+    #[test]
+    fn test_not_operation_with_bool() {
+        let input = Expression::UnaryOp(UnaryOperator::Not, Box::new(Expression::Bool(true)));
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Bool(false), result);
     }
 }
