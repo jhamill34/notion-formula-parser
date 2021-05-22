@@ -130,8 +130,29 @@ fn visit_expression(input: Expression) -> HandlerResult<RuntimeType> {
                 }
             }
         }
-        Expression::TernaryOp(_, _, _) => {
-            unimplemented!()
+        Expression::TernaryOp(test, accept, reject) => {
+            let test_result = visit_expression(*test)?;
+            let accept_result = visit_expression(*accept)?;
+            let reject_result = visit_expression(*reject)?;
+
+            match test_result {
+                Bool(test_value) => {
+                    if !is_same_type(&accept_result, &reject_result) {
+                        Err(SimpleError::new(format!(
+                            "Each branch of a condition must be the same type: {:?} and {:?}",
+                            accept_result, reject_result
+                        )))
+                    } else if test_value {
+                        Ok(accept_result)
+                    } else {
+                        Ok(reject_result)
+                    }
+                }
+                _ => Err(SimpleError::new(format!(
+                    "Result of test needs to be a boolean: {:?}",
+                    test_result
+                )))
+            }
         }
         Expression::Call(_, _) => {
             unimplemented!()
@@ -316,5 +337,20 @@ mod test {
         let result = interpret(input).unwrap();
 
         assert_eq!(RuntimeType::Bool(false), result);
+    }
+    #[test]
+    fn test_ternary_operation() {
+        let input = Expression::TernaryOp(
+            Box::new(Expression::Comparison(
+                Box::new(Expression::Number("1".into())),
+                ComparisonOperator::Equals,
+                Box::new(Expression::Number("2".into())),
+            )),
+            Box::new(Expression::Str("Cool".into())),
+            Box::new(Expression::Str("Beans".into())),
+        );
+        let result = interpret(input).unwrap();
+
+        assert_eq!(RuntimeType::Str("Beans".into()), result);
     }
 }
