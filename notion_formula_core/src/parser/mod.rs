@@ -1,8 +1,8 @@
 mod util;
 
-use crate::tokenizer::{Token};
+use crate::tokenizer::Token;
 use lookahead_buffer::LookaheadBuffer;
-use pipeline::{HandlerResult};
+use pipeline::HandlerResult;
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
