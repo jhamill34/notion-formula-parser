@@ -4,22 +4,12 @@ mod test {
     use notion_formula_core::parser::ComparisonOperator::*;
     use notion_formula_core::parser::Expression::*;
     use notion_formula_core::*;
+    use std::fs::File;
 
     #[test]
     fn test_input_string_to_ast() {
-        let input: Vec<char> = "\
-        if(\
-            prop(\"State\") == \"⚪\" or prop(\"Estimated Completion Date\") == \"⏳ Waiting...\", \
-            \"🟨\", \
-            if(\
-                prop(\"State\") == \"🔵\", \
-                \"🟩\", \
-                \"🟥\" \
-            ) \
-        )"
-        .chars()
-        .collect();
-
+        let mut file = File::open("tests/test_formula.notion").unwrap();
+        let input: Vec<char> = reader::read(&mut file).unwrap();
         let tokens = tokenizer::tokenizer(input).unwrap();
         let ast: parser::Expression = parser::formula_parser(tokens).unwrap();
 

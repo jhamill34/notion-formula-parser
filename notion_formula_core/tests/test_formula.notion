@@ -1,0 +1,9 @@
+if(
+    prop("State") == "⚪" or prop("Estimated Completion Date") == "⏳ Waiting...",
+    "🟨",
+    if(
+        prop("State") == "🔵",
+        "🟩",
+        "🟥"
+    )
+)
