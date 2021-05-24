@@ -8,6 +8,10 @@ use util::*;
 pub enum TokenType {
     LeftParen,
     RightParen,
+    LeftBracket,
+    RightBracket,
+    At,
+    SemiColon,
     Comma,
     QuestionMark,
     Colon,
@@ -17,6 +21,7 @@ pub enum TokenType {
     Star,
     Percent,
     Caret,
+    Equal,
     BangEqual,
     EqualEqual,
     Greater,
@@ -31,6 +36,11 @@ pub enum TokenType {
     And,
     Or,
     Not,
+    Assert,
+    Print,
+    Let,
+    Table,
+    Formula,
     Eof,
     Unknown(char),
     Ignored,
@@ -53,6 +63,7 @@ impl Token {
 }
 
 pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
+    use TokenType::*;
     let mut result: Vec<Token> = Vec::new();
     let mut buffer = LookaheadBuffer::new(input);
     let mut column = 1;
@@ -61,25 +72,29 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
     while let Some(value) = buffer.peek(0) {
         buffer.advance();
         let token_type = match value {
-            '(' => TokenType::LeftParen,
-            ')' => TokenType::RightParen,
-            ',' => TokenType::Comma,
-            '?' => TokenType::QuestionMark,
-            ':' => TokenType::Colon,
-            '+' => TokenType::Plus,
-            '-' => TokenType::Minus,
-            '*' => TokenType::Star,
-            '/' => TokenType::Slash,
-            '%' => TokenType::Percent,
-            '^' => TokenType::Caret,
+            '(' => LeftParen,
+            ')' => RightParen,
+            ',' => Comma,
+            '?' => QuestionMark,
+            ':' => Colon,
+            '+' => Plus,
+            '-' => Minus,
+            '*' => Star,
+            '/' => Slash,
+            '%' => Percent,
+            '^' => Caret,
+            '{' => LeftBracket,
+            '}' => RightBracket,
+            '@' => At,
+            ';' => SemiColon,
             '>' => {
                 let next_value = buffer.peek(0);
                 match next_value {
                     Some('=') => {
                         buffer.advance();
-                        TokenType::GreaterEqual
+                        GreaterEqual
                     }
-                    _ => TokenType::Greater,
+                    _ => Greater,
                 }
             }
             '<' => {
@@ -87,9 +102,9 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
                 match next_value {
                     Some('=') => {
                         buffer.advance();
-                        TokenType::LessEqual
+                        LessEqual
                     }
-                    _ => TokenType::Less,
+                    _ => Less,
                 }
             }
             '=' => {
@@ -97,9 +112,9 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
                 match next_value {
                     Some('=') => {
                         buffer.advance();
-                        TokenType::EqualEqual
+                        EqualEqual
                     }
-                    _ => TokenType::Unknown(value),
+                    _ => Equal
                 }
             }
             '!' => {
@@ -107,9 +122,9 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
                 match next_value {
                     Some('=') => {
                         buffer.advance();
-                        TokenType::BangEqual
+                        BangEqual
                     }
-                    _ => TokenType::Unknown(value),
+                    _ => Unknown(value),
                 }
             }
             '"' => {
@@ -125,18 +140,18 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
                 }
 
                 let str_literal = buffer.get_slice().iter().collect();
-                TokenType::StringLiteral(str_literal)
+                StringLiteral(str_literal)
             }
-            ' ' | '\r' | '\t' => TokenType::Ignored,
+            ' ' | '\r' | '\t' => Ignored,
             '\n' => {
                 line = line + 1;
                 column = 0;
-                TokenType::Ignored
+                Ignored
             }
             '0'..='9' => {
                 consume_number_literal(&mut buffer);
                 let num_literal = buffer.get_slice().iter().collect();
-                TokenType::NumberLiteral(num_literal)
+                NumberLiteral(num_literal)
             }
             'a'..='z' | 'A'..='Z' => {
                 while let Some('a'..='z') | Some('A'..='Z') | Some('0'..='9') = buffer.peek(0) {
@@ -145,12 +160,12 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
 
                 check_keyword(&buffer.get_slice())
             }
-            _ => TokenType::Unknown(value),
+            _ => Unknown(value),
         };
 
         match token_type {
-            TokenType::Ignored => (),
-            TokenType::Unknown(value) => {
+            Ignored => (),
+            Unknown(value) => {
                 panic!(format!("Unknown character found {}", value as char))
             }
             _ => result.push(Token {
@@ -164,7 +179,7 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
     }
 
     result.push(Token {
-        token_type: TokenType::Eof,
+        token_type: Eof,
         line,
         column,
     });
@@ -173,14 +188,21 @@ pub fn tokenizer(input: Vec<char>) -> HandlerResult<Vec<Token>> {
 }
 
 fn check_keyword(input: &[char]) -> TokenType {
+    use TokenType::*;
+
     let result: String = input.iter().collect();
     match result.as_str() {
-        "or" => TokenType::Or,
-        "and" => TokenType::And,
-        "not" => TokenType::Not,
-        "true" => TokenType::True,
-        "false" => TokenType::False,
-        _ => TokenType::Identifier(result),
+        "or" => Or,
+        "and" => And,
+        "not" => Not,
+        "true" => True,
+        "false" => False,
+        "assert" => Assert,
+        "print" => Print,
+        "let" => Let,
+        "table" => Table,
+        "formula" => Formula,
+        _ => Identifier(result),
     }
 }
 

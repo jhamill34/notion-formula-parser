@@ -3,7 +3,7 @@ use super::*;
 
 #[test]
 fn test_can_handle_single_byte_tokens() {
-    let input: Vec<char> = "( ) , ? : + - * % ^ /".chars().collect();
+    let input: Vec<char> = "( ) , ? : + - * % ^ / { } @ ;".chars().collect();
     let result = tokenizer(input).unwrap();
 
     assert_eq!(
@@ -64,9 +64,29 @@ fn test_can_handle_single_byte_tokens() {
                 column: 21
             },
             Token {
+                token_type: LeftBracket,
+                line: 1,
+                column: 23
+            },
+            Token {
+                token_type: RightBracket,
+                line: 1,
+                column: 25
+            },
+            Token {
+                token_type: At,
+                line: 1,
+                column: 27
+            },
+            Token {
+                token_type: SemiColon,
+                line: 1,
+                column: 29
+            },
+            Token {
                 token_type: Eof,
                 line: 1,
-                column: 22
+                column: 30
             }
         ],
         result
@@ -75,7 +95,7 @@ fn test_can_handle_single_byte_tokens() {
 
 #[test]
 fn test_can_handle_double_byte_tokens() {
-    let input: Vec<char> = ">= <= > == < != ==".chars().collect();
+    let input: Vec<char> = ">= <= > == < != = ==".chars().collect();
     let result = tokenizer(input).unwrap();
 
     assert_eq!(
@@ -111,14 +131,19 @@ fn test_can_handle_double_byte_tokens() {
                 column: 14
             },
             Token {
-                token_type: EqualEqual,
+                token_type: Equal,
                 line: 1,
                 column: 17
             },
             Token {
-                token_type: Eof,
+                token_type: EqualEqual,
                 line: 1,
                 column: 19
+            },
+            Token {
+                token_type: Eof,
+                line: 1,
+                column: 21
             }
         ],
         result
@@ -201,7 +226,7 @@ fn test_can_handle_number_literals() {
 
 #[test]
 fn test_can_handle_identifiers() {
-    let input: Vec<char> = "foo and Bar or baz not".chars().collect();
+    let input: Vec<char> = "foo and Bar or baz not assert print let table formula".chars().collect();
     let result = tokenizer(input).unwrap();
 
     assert_eq!(
@@ -237,9 +262,34 @@ fn test_can_handle_identifiers() {
                 column: 20
             },
             Token {
+                token_type: Assert,
+                line: 1,
+                column: 24
+            },
+            Token {
+                token_type: Print,
+                line: 1,
+                column: 31
+            },
+            Token {
+                token_type: Let,
+                line: 1,
+                column: 37
+            },
+            Token {
+                token_type: Table,
+                line: 1,
+                column: 41
+            },
+            Token {
+                token_type: Formula,
+                line: 1,
+                column: 47
+            },
+            Token {
                 token_type: Eof,
                 line: 1,
-                column: 23
+                column: 54
             }
         ],
         result

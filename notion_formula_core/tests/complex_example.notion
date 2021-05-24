@@ -2,20 +2,12 @@
 table Users {
     "name": Text,
     "age": Number,
-    "test": @simple_formula
+    "test": formula {
+        prop("name") + " " + format(prop("age"))
+    }
 }
 
-formula simple_formula {
-    prop("name") + " " + format(prop("age"))
-}
+let u0 = Users { "name": "Atlas", "age": 0 };
+let u1 = Users { "name": "Josh", "age": 29 };
 
-let u1 = Users({ "name": "Amanda", "age": 28 })
-let u2 = Users({ "name": "Josh", "age": 29 })
-Users.insert(u1)
-Users.insert(u2)
-
-let u1 = Users.get({ name: "Josh" })
-let u2 = Users.get(1)
-
-assert u1.test == "Josh 29"
-assert u2.test == "Amanda 28"
+print u0["test"]
