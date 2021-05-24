@@ -1,0 +1,21 @@
+// Define a table schema(s) with formula reference
+table Users {
+    "name": Text,
+    "age": Number,
+    "test": @simple_formula
+}
+
+formula simple_formula {
+    prop("name") + " " + format(prop("age"))
+}
+
+let u1 = Users({ "name": "Amanda", "age": 28 })
+let u2 = Users({ "name": "Josh", "age": 29 })
+Users.insert(u1)
+Users.insert(u2)
+
+let u1 = Users.get({ name: "Josh" })
+let u2 = Users.get(1)
+
+assert u1.test == "Josh 29"
+assert u2.test == "Amanda 28"
